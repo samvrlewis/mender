@@ -167,17 +167,11 @@ func (p *partitions) getAndCacheActivePartition(rootChecker func(StatCommander, 
 		return "", err
 	}
 
-	// First check if mountCandidate matches rootDevice
+	// First check if mountCandidate matches rootDevice and ENV
 	if mountCandidate != "" {
-		if rootChecker(p, mountCandidate, rootDevice) {
+		if rootChecker(p, mountCandidate, rootDevice) && checkBootEnvAndRootPartitionMatch(bootEnvBootPart, mountCandidate) {
 			p.active = mountCandidate
 			log.Debugf("Setting active partition from mount candidate: %s", p.active)
-			return p.active, nil
-		}
-		// If mount candidate does not match root device check if we have a match in ENV
-		if checkBootEnvAndRootPartitionMatch(bootEnvBootPart, mountCandidate) {
-			p.active = mountCandidate
-			log.Debug("Setting active partition: ", mountCandidate)
 			return p.active, nil
 		}
 		// If not see if we are lucky somewhere else
@@ -191,26 +185,26 @@ func (p *partitions) getAndCacheActivePartition(rootChecker func(StatCommander, 
 	}
 
 	activePartition, err := getRootFromMountedDevices(p, rootChecker, mountedDevices, rootDevice)
-	if err != nil {
-		// If we reach this point, we have not been able to find a match
-		// based on mounted device.
-		//
-		// Fall-back to configuration and environment only!
-		if checkBootEnvAndRootPartitionMatch(bootEnvBootPart, p.rootfsPartA) {
-			p.active = p.rootfsPartA
-			log.Debug("Setting active partition from configuration and environment: ", p.active)
+	if err == nil {
+		if checkBootEnvAndRootPartitionMatch(bootEnvBootPart, activePartition) {
+			p.active = activePartition
+			log.Debug("Setting active partition: ", activePartition)
 			return p.active, nil
 		}
-		if checkBootEnvAndRootPartitionMatch(bootEnvBootPart, p.rootfsPartB) {
-			p.active = p.rootfsPartB
-			log.Debug("Setting active partition from configuration and environment: ", p.active)
-			return p.active, nil
-		}
-		return "", err
 	}
-	if checkBootEnvAndRootPartitionMatch(bootEnvBootPart, activePartition) {
-		p.active = activePartition
-		log.Debug("Setting active partition: ", activePartition)
+
+	// If we reach this point, we have not been able to find a match
+	// based on mounted device.
+	//
+	// Fall-back to configuration and environment only!
+	if checkBootEnvAndRootPartitionMatch(bootEnvBootPart, p.rootfsPartA) {
+		p.active = p.rootfsPartA
+		log.Debug("Setting active partition from configuration and environment: ", p.active)
+		return p.active, nil
+	}
+	if checkBootEnvAndRootPartitionMatch(bootEnvBootPart, p.rootfsPartB) {
+		p.active = p.rootfsPartB
+		log.Debug("Setting active partition from configuration and environment: ", p.active)
 		return p.active, nil
 	}
 

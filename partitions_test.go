@@ -179,14 +179,15 @@ func Test_getActivePartition_noActiveInactiveSet(t *testing.T) {
 		expectedActive string
 	}{
 		// have mount candidate to return
-		{"/dev/mmcblk0p2 on / type ext4 (rw,errors=remount-ro)", "mender_boot_part=1", 0, trueChecker, nil, nil, nil, "/dev/mmcblk0p2"},
-		{"/dev/mmcblk0p2 on / type ext4 (rw,errors=remount-ro)", "mender_boot_part=1", 0, falseChecker, nil, nil, RootPartitionDoesNotMatchMount, ""},
+		{"/dev/ram0 on / type ext4 (rw,errors=remount-ro)", "mender_boot_part=2", 0, trueChecker, []string{"/dev/ram0"}, nil, nil, "/dev/mmcblk0p2"},
+		{"/dev/mmcblk0p2 on / type ext4 (rw,errors=remount-ro)", "mender_boot_part=2", 0, trueChecker, nil, nil, nil, "/dev/mmcblk0p2"},
+		{"/dev/mmcblk0p2 on / type ext4 (rw,errors=remount-ro)", "mender_boot_part=2", 0, falseChecker, nil, nil, nil, "/dev/mmcblk0p2"},
 		// no mount candidate
-		{"", "mender_boot_part=1", 0, falseChecker, nil, nil, RootPartitionDoesNotMatchMount, ""},
-		{"", "mender_boot_part=1", 0, trueChecker, nil, nil, RootPartitionDoesNotMatchMount, ""},
+		{"", "mender_boot_part=1", 0, falseChecker, nil, nil, ErrorNoMatchBootPartRootPart, ""},
+		{"", "mender_boot_part=1", 0, trueChecker, nil, nil, ErrorNoMatchBootPartRootPart, ""},
 		{"", "mender_boot_part=1", 0, trueChecker, []string{"/dev/mmc1", "/dev/mmc2"}, nil, nil, "/dev/mmc1"},
-		{"", "mender_boot_part=1", 0, falseChecker, []string{"/dev/mmc1", "/dev/mmc2"}, nil, RootPartitionDoesNotMatchMount, ""},
-		{"", "mender_boot_part=2", 0, trueChecker, []string{"/dev/mmc1", "/dev/mmc2"}, nil, ErrorNoMatchBootPartRootPart, ""},
+		{"", "mender_boot_part=1", 0, falseChecker, []string{"/dev/mmc1", "/dev/mmc2"}, nil, ErrorNoMatchBootPartRootPart, ""},
+		{"", "mender_boot_part=2", 0, trueChecker, []string{"/dev/mmc1", "/dev/mmc2"}, nil, nil, "/dev/mmcblk0p2"},
 		{"", "mender_boot_part=2", 1, trueChecker, []string{"/dev/mmc1", "/dev/mmc2"}, nil, ErrorNoMatchBootPartRootPart, ""},
 	}
 
